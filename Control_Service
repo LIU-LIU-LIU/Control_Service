@@ -182,20 +182,15 @@ do
         echo -e "\033[30;47m  服务启动文件为:$service_start \033[0m"
         if [ "$service_stop" == "null"  ]; then 
 		if [ "$service_pidfile" == "null" ]; then
-			
-			service_stop='pid=`netstat -plnt | grep ":$service_port" | awk '"'"'BEGIN{FS=" "} NR<2{print $7}'"'"' | awk '"'"'BEGIN{FS="/"} NR<2{print $1}'"'"'` && kill -9 "$pid"'
+			service_stop='kill -9 `netstat -plnt | grep ":$s_port" | awk '"'"'BEGIN{FS=" "} NR<2{print $7}'"'"' | awk '"'"'BEGIN{FS="/"} NR<2{print $1}'"'"'`'
 		else
-			service_stop='kill -9 `cat $service_pidfile`'
+			service_stop='kill -9 `cat $s_pid`'
 		fi
 	else
 		echo -e "\033[30;47m  服务关闭命令为:$service_stop  \033[0m"
 	fi
         if [ "$service_pidfile" != "null" ]; then echo -e "\033[30;47m  服务PID文件为:$service_pidfile  \033[0m"; fi
-        if [ "$service_restart" == "null" ]; then 
-		service_restart=""$service_stop" && "$service_start""
-	else
-		echo -e "\033[30;47m  服务重启命令为:$service_restart  \033[0m"
-	fi
+        if [ "$service_restart" != "null" ]; then echo -e "\033[30;47m  服务重启命令为:$service_restart  \033[0m"; fi
         if [ "$service_reload" != "null" ]; then echo -e "\033[30;47m  服务重载命令为:$service_reload  \033[0m"; fi
         if [ "$service_port" != "null" ]; then echo -e "\033[30;47m  服务端口为:$service_port  \033[0m"; fi
         while true
@@ -231,19 +226,19 @@ if [ -z "$detection" ]; then
 	echo -e "$service_name(){" >> Control_Service.conf
         echo -e "s_name=\"$service_name\"" >> Control_Service.conf
         echo -e "s_start=\"$service_start\"" >> Control_Service.conf
-        echo -e "s_stop=\"$service_stop\"" >> Control_Service.conf
 	echo -e "s_pid=\"$service_pidfile\"" >> Control_Service.conf
+	echo -e "s_port=\"$service_port\"" >> Control_Service.conf
+        echo -e "s_stop=\"$service_stop\"" >> Control_Service.conf
         echo -e "s_restart=\"$service_restart\"" >> Control_Service.conf
         echo -e "s_reload=\"$service_reload\"" >> Control_Service.conf
-	echo -e "s_port=\"$service_port\"" >> Control_Service.conf
 	echo -e "}" >> Control_Service.conf
 else
 	sed -i /$service_name\(\){/,+7{"s#s_start.*#s_start=\"$service_start\"#"} Control_Service.conf
-        sed -i /$service_name\(\){/,+7{"s#s_stop.*#s_stop=\"$service_stop\"#"} Control_Service.conf
         sed -i /$service_name\(\){/,+7{"s#s_pid.*#s_pid=\"$service_pidfile\"#"} Control_Service.conf
+	sed -i /$service_name\(\){/,+7{"s#s_port.*#s_port=\"$service_port\"#"} Control_Service.conf
+        sed -i /$service_name\(\){/,+7{"s#s_stop.*#s_stop=\"$service_stop\"#"} Control_Service.conf
         sed -i /$service_name\(\){/,+7{"s#s_restart.*#s_restart=\"$service_restart\"#"} Control_Service.conf
         sed -i /$service_name\(\){/,+7{"s#s_reload.*#s_reload=\"$service_reload\"#"} Control_Service.conf
-        sed -i /$service_name\(\){/,+7{"s#s_port.*#s_port=\"$service_port\"#"} Control_Service.conf
 fi
 #信息登入完毕
 }
@@ -392,16 +387,22 @@ else
 		else
 			$2
 			case $1 in
-			start)	`$s_start`
+			start)	$s_start
 			;;
-			stop)	`$s_stop`
+			stop)	$s_stop
 			;;
 			status) Status $2
 			;;
-			restart) `$s_restart`
+			restart)
+				if [ "$s_restart" == "null" ];then
+					$s_stop
+					$s_start
+				else
+					$s_restart
+				fi
 			;;
 			reload)		
-				if [ "$s_reload" == "null" -o -z "$s_reload" ];then echo -e "\033[31;47m 此服务没有定义重载命令  \033[0m";else `$s_reload`; fi
+				if [ "$s_reload" == "null" -o -z "$s_reload" ];then echo -e "\033[31;47m 此服务没有定义重载命令  \033[0m";else $s_reload; fi
 			;;
 			enable)
 				detection=`grep "$s_start" /etc/rc.d/rc.local`

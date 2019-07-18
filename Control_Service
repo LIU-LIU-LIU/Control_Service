@@ -1,0 +1,420 @@
+#!/bin/bash
+#一个控制服务的脚本
+
+main(){
+while true
+do
+	clear
+	. Control_Service.conf
+	num=${#a_services[@]}
+	echo -e "\033[34;47m| 1：查看服务  \033[0m"
+	echo -e "\033[34;47m| 2：添加服务  \033[0m"
+	echo -e "\033[34;47m| 3：删除服务  \033[0m"
+	echo -e "\033[34;47m| 4：查看帮助  \033[0m"
+	echo -e "\033[34;47m| 5：退出或者按ctrl+c结束  \033[0m"
+        echo -e "\033[34;47m| 0：返回  \033[0m"
+	echo -e "\033[34;47m+----------------------------------------   \033[0m"
+	echo -e "\033[34;47m|输入以上功能数字，回车后继续。   \033[0m"
+	read select
+	case $select in
+	1)	inquire
+	;;
+	2)	add
+	;;
+	3)	remove
+	;;
+	4)
+		Help
+		echo -e "\033[34;47m 回车后继续 \033[0m"
+		read a
+	;;
+	5|0)
+		echo -e "\033[34;47m|退出  \033[0m"
+		exit 0
+	;;
+	*)
+		echo -e "\033[31;47m|请输入正确的数字(1-5)  \033[0m"
+		read
+	esac
+done
+}
+#主程序函数结束
+inquire(){
+while true
+do
+	while true
+	do
+	        echo -e "\033[34;47m|当前添加的服务有:${a_services[*]} \033[0m"
+	        echo -e "\033[34;47m|需要查看详情请直接输入服务名,输入0返回,回车后继续。 \033[0m"
+	        read name
+		if [ "$name" == "0" ]; then
+			main
+		else
+			services $name
+			if [ -z "$detection" ];then echo -e "\033[31;47m 请输入存在的服务名  \033[0m" ;else $name ;break;fi
+		fi
+	done
+        echo -e "\033[34;47m|服务名:$s_name  \033[0m"
+        echo -e "\033[34;47m|启动命令:$s_start  \033[0m"
+        echo -e "\033[34;47m|停止命令:$s_stop  \033[0m"
+        echo -e "\033[34;47m|重启命令:$s_restart  \033[0m"
+        echo -e "\033[34;47m|重载命令:$s_reload  \033[0m"
+        echo -e "\033[34;47m|端口:$s_port  \033[0m"
+        echo -e "\033[34;47m|PID:$s_pid  \033[0m"
+        echo -e "\033[34;47m|进程名:$s_comm  \033[0m"
+        echo -e "\033[34;47m|开机自启:$s_boot  \033[0m"
+        echo -e "\033[34;47m+----------------------------------------   \033[0m"
+        echo -e "\033[34;47m|回车后返回,输入0返回 \033[0m"
+        read a
+	if [ "$a" == "0" ] ; then break;fi
+done
+}
+#查询服务函数
+
+add(){
+while true
+do
+        clear
+        echo -e "\033[30;47m -*----------开始---------* \033[0m"
+        echo -e "\033[30;47m 直接输入内容，回车确定。带*为必选 \033[0m"
+        echo -e "\033[30;47m 所有内容最好以英文输入，ctrl+c终止程序  \033[0m"
+        while true
+        do
+                echo -e "\033[30;47m  请输入服务名*必填 \033[0m"
+                read service_name
+                if [ -z "$service_name" ]
+                then
+                        echo -e "\033[30;47m  请输入服务名  \033[0m"
+                else
+			services $service_name
+                        if [ -z "$detection" ]; then
+                                echo -e "\033[30;47m  完成 \033[0m"
+                                select='ok'
+                        else
+                                while true
+                                do
+                                        echo -e "\033[30;47m  该服务名已存在，是否继续(y/n)继续将替换原服务的配置,否则重新输入 \033[0m"
+                                        read select
+                                        case $select in
+                                        y|yes|Y)        echo -e "\033[30;47m  好  \033[0m"
+                                                        select='ok'
+                                                        break
+                                        ;;
+                                        n|no|N)         echo -e "\033[30;47m  好 \033[0m"
+                                                        select='no'
+                                                        break
+                                        ;;
+                                        *)              echo -e "\033[30;47m  请输入正确的选择(y/n)  \033[0m"
+                                        esac
+                                done
+                        fi
+                        if [ "$select" != "no" ]
+                        then
+                                break
+                        fi
+                fi
+        done
+        while true
+        do
+                echo -e "\033[30;47m 请输入该服务的启动命令，包括文件位置*必填 \033[0m"
+                echo -e "\033[30;47m 例如:/opt/tomcat/bin/startup.sh \033[0m"
+                read service_start
+                if [ -z "$service_start" ]
+                then
+                        echo -e "\033[30;47m  请输入启动命令 \033[0m"
+                else
+                        echo -e "\033[30;47m  完成 \033[0m"
+                        break
+                fi
+        done
+	echo -e "\033[31;47m 下面的停止命令，PID和端口三者必须指定一项！ \033[0m"
+	while true
+	do
+	        echo -e "\033[30;47m 请输入该服务的停止命令，使用绝对路径 可选(回车跳过) \033[0m"
+		echo -e "\033[31;47m 例如:/opt/tomcat/bin/shutdown.sh \033[0m"
+	        read service_stop
+	        if [ -z "$service_stop" ]
+	        then
+	                service_stop='null'
+	        fi
+	        echo -e "\033[30;47m  完成 \033[0m"
+	        echo -e "\033[30;47m  请输入该服务的PID文件路径 可选(回车跳过) \033[0m"
+		echo -e "\033[31;47m 例如:/opt/tomcat/tomcat.pid \033[0m"
+	        read service_pidfile
+	        if [ -z "$service_pidfile" ]
+	        then
+	                service_pidfile='null'
+	        fi
+	        echo -e "\033[30;47m  完成 \033[0m"
+	        echo -e "\033[30;47m  请输入该服务的端口 可选(回车跳过) \033[0m"
+		echo -e "\033[30;47m 例如:80 \033[0m"
+	        read service_port
+	        if [ -z "$service_port" ]
+	        then
+	                service_port='null'
+	        fi
+		if [ "$service_stop" == "null" -a "$service_pidfile" == "null" -a "$service_port" == "null" ] ;then
+			echo -e "\033[31;47m 停止命令,PID文件和端口必须指定一个 \033[0m"
+		else
+			break
+		fi
+	done
+        echo -e "\033[30;47m  完成 \033[0m"
+        echo -e "\033[30;47m  请输入该服务的重启命令 可选(回车跳过) \033[0m"
+	echo -e "\033[30;47m 例如:/opt/nginx/sbin/nginx -s restart  \033[0m"
+        read service_restart
+        if [ -z "$service_restart" ]
+        then
+                service_restart='null'
+        fi
+        echo -e "\033[30;47m  完成 \033[0m"
+        echo -e "\033[30;47m  请输入该服务的重载命令 可选(回车跳过) \033[0m"
+	echo -e "\033[30;47m 例如:/opt/nginx/sbin/nginx -s reload \033[0m"
+        read service_reoad
+        if [ -z "$service_reload" ]
+        then
+                service_reload='null'
+        fi
+        echo -e "\033[30;47m  完成 \033[0m"
+        echo -e "\033[30;47m -*----------*-*---------* \033[0m"
+        echo -e "\033[30;47m  请确认 输入y/n (输入n重新登记) \033[0m"
+        echo -e "\033[30;47m  服务名：$service_name \033[0m"
+        echo -e "\033[30;47m  服务启动文件为:$service_start \033[0m"
+        if [ "$service_stop" == "null"  ]; then 
+		if [ "$service_pidfile" == "null" ]; then
+			
+			service_stop='pid=`netstat -plnt | grep ":$service_port" | awk '"'"'BEGIN{FS=" "} NR<2{print $7}'"'"' | awk '"'"'BEGIN{FS="/"} NR<2{print $1}'"'"'` && kill -9 "$pid"'
+		else
+			service_stop='kill -9 `cat $service_pidfile`'
+		fi
+	else
+		echo -e "\033[30;47m  服务关闭命令为:$service_stop  \033[0m"
+	fi
+        if [ "$service_pidfile" != "null" ]; then echo -e "\033[30;47m  服务PID文件为:$service_pidfile  \033[0m"; fi
+        if [ "$service_restart" == "null" ]; then 
+		service_restart=""$service_stop" && "$service_start""
+	else
+		echo -e "\033[30;47m  服务重启命令为:$service_restart  \033[0m"
+	fi
+        if [ "$service_reload" != "null" ]; then echo -e "\033[30;47m  服务重载命令为:$service_reload  \033[0m"; fi
+        if [ "$service_port" != "null" ]; then echo -e "\033[30;47m  服务端口为:$service_port  \033[0m"; fi
+        while true
+        do
+                read select
+                case $select in
+                y|yes|Y)        echo -e "\033[30;47m  完成 \033[0m"
+                        select='ok'
+                        break
+                ;;
+                n|no|N)         echo -e "\033[30;47m  完成 \033[0m"
+                        break
+                ;;
+                *)              echo -e "\033[30;47m  请输入正确的选择(y/n)  \033[0m"
+                esac
+        done
+        if [ $select == 'ok' ]
+        then
+                break
+        fi
+done
+if [ -z "$detection" ]; then
+        echo -e "" >> Control_Service.conf
+	max=0
+	for value in ${!a_services[*]}
+	do
+	        if [ "$value" -gt "$max" ];then
+	                max="$value"
+	        fi
+	done
+	max=`expr $max + 1`
+	echo -e "a_services[$max]=\"$service_name\"" >> Control_Service.conf
+	echo -e "$service_name(){" >> Control_Service.conf
+        echo -e "s_name=\"$service_name\"" >> Control_Service.conf
+        echo -e "s_start=\"$service_start\"" >> Control_Service.conf
+        echo -e "s_stop=\"$service_stop\"" >> Control_Service.conf
+	echo -e "s_pid=\"$service_pidfile\"" >> Control_Service.conf
+        echo -e "s_restart=\"$service_restart\"" >> Control_Service.conf
+        echo -e "s_reload=\"$service_reload\"" >> Control_Service.conf
+	echo -e "s_port=\"$service_port\"" >> Control_Service.conf
+	echo -e "}" >> Control_Service.conf
+else
+	sed -i /$service_name\(\){/,+7{"s#s_start.*#s_start=\"$service_start\"#"} Control_Service.conf
+        sed -i /$service_name\(\){/,+7{"s#s_stop.*#s_stop=\"$service_stop\"#"} Control_Service.conf
+        sed -i /$service_name\(\){/,+7{"s#s_pid.*#s_pid=\"$service_pidfile\"#"} Control_Service.conf
+        sed -i /$service_name\(\){/,+7{"s#s_restart.*#s_restart=\"$service_restart\"#"} Control_Service.conf
+        sed -i /$service_name\(\){/,+7{"s#s_reload.*#s_reload=\"$service_reload\"#"} Control_Service.conf
+        sed -i /$service_name\(\){/,+7{"s#s_port.*#s_port=\"$service_port\"#"} Control_Service.conf
+fi
+#信息登入完毕
+}
+#添加服务函数结束
+
+remove(){
+while true
+do
+	. Control_Service.conf
+	num=${#a_services[@]}
+	echo -e "\033[34;47m|当前添加的服务有:${a_services[*]} \033[0m"
+	echo -e "\033[31;47m| 请输入服务名。  \033[0m"
+	echo -e "\033[31;47m| 输入0返回,ctrl+c退出。\033[0m"
+	read service_name
+	services $service_name
+	if [ "$service_name" == "0" ]; then
+		echo -e "\033[31;47m| 退出 \033[0m"
+		break
+	elif [ -z "$detection" ]; then
+		echo -e "\033[31;47m 不存在此服务，请确认后再试。\n当前添加的服务有:${a_services[*]}\033[0m"
+	else
+                sed -i "/a_service.*.$service_name\"/,+9d" Control_Service.conf
+                echo -e "\033[34;47m| 完成 \033[0m"
+	fi
+done 
+}
+#删除服务函数结束
+
+services(){
+detection=""
+if [ -z "$1" ]
+then
+	echo -e "\033[31;47m  请输入服务名。  \033[0m"
+else
+	for value in ${a_services[*]}
+	do
+	        if [ "$1" == $value ]
+	        then
+			detection="$value"
+		fi
+	done
+fi
+}
+#检测函数结束
+
+Status(){
+echo -e "\033[34;47m 服务名:$1  \033[0m"
+if [ "$s_pid" == "null" -o -z "$s_pid" ];then
+	if [ -z "$s_port" ] ;then
+	        echo -e "\033[31;47m 此服务没有提供pid或者port无法检测详细状态。  \033[0m"
+        	exit 1
+	else
+		pid=`netstat -plnt | grep -w "$s_port" | awk 'BEGIN{FS=" "} NR<2{print $7}' | awk 'BEGIN{FS="/"} NR<2{print $1}'`
+        fi
+else
+	pid=`cat "$s_pid"`
+fi
+if [ -z "$pid" ]; then
+	echo -e "\033[31;40m ■:服务没有在运行  \033[0m"
+	exit 0
+else
+	echo -e "\033[32;40m ■:服务在运行  \033[0m"
+fi
+fettle=`ps -exu | grep -w "$pid"`
+echo "$fettle" | awk 'BEGIN{FS=" "} NR<2{print "启动用户为:"$1}'
+echo "$fettle" | awk 'BEGIN{FS=" "} NR<2{print "pid为:"$2}'
+echo "$fettle" | awk 'BEGIN{FS=" "} NR<2{print "CPU占用率为:"$3}'
+echo "$fettle" | awk 'BEGIN{FS=" "} NR<2{print "内存占用率为:"$4}'
+echo "$fettle" | awk 'BEGIN{FS=" "} NR<2{print "该 process 使用掉的虚拟内存量 (Kbytes):"$5}'
+echo "$fettle" | awk 'BEGIN{FS=" "} NR<2{print "该 process 占用的固定的内存量 (Kbytes):"$6}'
+echo "$fettle" | awk 'BEGIN{FS=" "} NR<2{print "终端机位置:"$7}'
+echo "$fettle" | awk 'BEGIN{FS=" "} NR<2{print "该程序目前的状态:"$8}'
+echo "$fettle" | awk 'BEGIN{FS=" "} NR<2{print "该process 开始运作的日期:"$9}'
+echo "$fettle" | awk 'BEGIN{FS=" "} NR<2{print "该 process 实际使用 CPU 运作的时间:"$10}'
+}
+#状态检查函数结束
+
+Help(){
+echo -e "\033[34;47m 配置文件路径"$dir"/Control_Service.conf  \033[0m"
+echo -e "\033[34;47m 控制服务帮助文档:
+Control_Service版本：2019年7月18日10:14:32
+Github:https://github.com/LIU-LIU-LIU/Control_Service
+使用方法:Control_Service [选项] [参数] \t命令模式
+Control_Service \t如不提供任何选项，进入互动模式 \033[0m"
+echo -e "\033[34;47m选项:
+-h/--help \t查看帮助
+start \t启动服务 
+stop \t停止服务
+status \t查看服务状态，在pid或者port指定的情况下可以使用
+(STAT：该程序目前的状态，主要的状态有
+R ：该程序目前正在运作，或者是可被运作
+S ：该程序目前正在睡眠当中 (可说是 idle 状态)，但可被某些讯号 (signal) 唤醒。
+T ：该程序目前正在侦测或者是停止了
+Z ：该程序应该已经终止，但是其父程序却无法正常的终止他，造成 zombie (疆尸) 程序的状态)
+restart \t重启服务
+reload \t重新加载服务，指定的情况下可以使用
+enable \t添加服务到开机自启
+disable \t从开机自启中删除，在添加过开机自启的情况下使用。\033[0m"
+echo -e "\033[34;47m参数:
+除帮助外，所有选项后面需指定服务名 \033[0m"
+echo -e "\033[34;47m互动模式:
+1.查看服务\t此功能可以遍历已经添加的服务配置信息。
+2.添加服务\t此功能用作添加服务，需按照提示按规添加，如要修改某个服务可以再次添加此服务，是否替换中选择“是”即可。
+3.删除服务\t此功能用来从配置文件中删除某个服务的配置。\n\033[0m"
+}
+#帮助函数结束
+
+
+dir=`pwd`
+int=0
+while true
+do
+        if [ $int -gt 3 ]
+        then
+                echo -e "\033[31;47m 无法创建配置文件。  \033[0m"
+                exit 1
+        else
+                if [ -e ""$dir"/Control_Service.conf" ]
+                then
+			. Control_Service.conf
+                        #调用配置文件
+                        num=${#a_services[@]}
+                        #获取服务数组个数
+                        break
+                else
+                        echo -e "#!/bin/bash\n#控制服务脚本配置文件\n\na_services=()\n\n" > "$dir"/Control_Service.conf
+                        let "int++"
+                fi
+        fi
+done
+#配置文件检测完毕
+
+if [ -z "$1" ]
+then
+	main
+else
+	case $1 in
+	-h|--help)
+		Help
+	;;
+        start|stop|status|restart|reload|enable|disable)
+		services $2
+		if [ -z "$detection" ]; then
+                        echo -e "\033[31;47m 不存在此服务，请确认后再试。\n当前添加的服务有:${a_services[*]}\033[0m"
+                        exit 1
+		else
+			$2
+			case $1 in
+			start)	`$s_start`
+			;;
+			stop)	`$s_stop`
+			;;
+			status) Status $2
+			;;
+			restart) `$s_restart`
+			;;
+			reload)		
+				if [ "$s_reload" == "null" -o -z "$s_reload" ];then echo -e "\033[31;47m 此服务没有定义重载命令  \033[0m";else `$s_reload`; fi
+			;;
+			enable)
+				detection=`grep "$s_start" /etc/rc.d/rc.local`
+				if [ -z "$detection" ];then echo "$s_start" >> /etc/rc.d/rc.local;echo -e "\033[34;47m 完成 \033[0m" ;else echo -e "\033[31;47m 此服务已添加过开机自启了  \033[0m" ; fi
+			;;
+			disable)
+                                detection=`grep "$s_start" /etc/rc.d/rc.local`
+                                if [ -z "$detection" ];then echo -e "\033[31;47m 此服务没有添加过开机自启  \033[0m" ;else sed '/$s_start/d' /etc/rc.d/rc.local;echo -e "\033[34;47m 完成 \033[0m";fi
+			esac
+		fi
+        ;;
+        *)
+  		echo -e "\033[31;47m  请输入正确的命令,(--help)查看帮助  \033[0m"
+	        exit 1
+	esac
+fi

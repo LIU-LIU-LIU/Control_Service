@@ -28,3 +28,7 @@ disable	从开机自启中删除，在添加过开机自启的情况下使用。
 Control_Service		主程序,可以添加到环境变量在任何目录调用。<br>
 Control_Service.conf	配置文件,启动程序时自动创建。<br>
 /etc/rc.d/rc.local	会修改此文件，以达到开机自启的功能。<br>
+<br>
+
+![Image text](https://liuliuliu.club:88/test/%E6%8E%A7%E5%88%B6%E6%9C%8D%E5%8A%A1%E6%88%AA%E5%9B%BE.png)
+功能截图<br>

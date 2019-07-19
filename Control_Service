@@ -5,7 +5,7 @@ main(){
 while true
 do
 	clear
-	. Control_Service.conf
+	. "$dir"/Control_Service.conf
 	num=${#a_services[@]}
 	echo -e "\033[34;47m| 1：查看服务  \033[0m"
 	echo -e "\033[34;47m| 2：添加服务  \033[0m"
@@ -347,7 +347,7 @@ echo -e "\033[34;47m互动模式:
 #帮助函数结束
 
 
-dir=`pwd`
+dir=`echo ~`
 int=0
 while true
 do
@@ -358,7 +358,7 @@ do
         else
                 if [ -e ""$dir"/Control_Service.conf" ]
                 then
-			. Control_Service.conf
+			. "$dir"/Control_Service.conf
                         #调用配置文件
                         num=${#a_services[@]}
                         #获取服务数组个数

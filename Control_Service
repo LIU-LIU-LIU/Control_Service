@@ -182,7 +182,7 @@ do
         echo -e "\033[30;47m  服务启动文件为:$service_start \033[0m"
         if [ "$service_stop" == "null"  ]; then 
 		if [ "$service_pidfile" == "null" ]; then
-			service_stop='kill -9 `netstat -plnt | grep ":$s_port" | awk '"'"'BEGIN{FS=" "} NR<2{print $7}'"'"' | awk '"'"'BEGIN{FS="/"} NR<2{print $1}'"'"'`'
+			service_stop='kill -9 `netstat -plnt | grep ":$s_port" | awk '"'"'"'"'"'"'"'"'BEGIN{FS=" "} NR<2{print $7}'"'"'"'"'"'"'"'"' | awk '"'"'"'"'"'"'"'"'BEGIN{FS="/"} NR<2{print $1}'"'"'"'"'"'"'"'"'`'
 		else
 			service_stop='kill -9 `cat $s_pid`'
 		fi
@@ -222,23 +222,23 @@ if [ -z "$detection" ]; then
 	        fi
 	done
 	max=`expr $max + 1`
-	echo -e "a_services[$max]=\"$service_name\"" >> Control_Service.conf
+	echo -e "a_services[$max]=\'$service_name\'" >> Control_Service.conf
 	echo -e "$service_name(){" >> Control_Service.conf
-        echo -e "s_name=\"$service_name\"" >> Control_Service.conf
-        echo -e "s_start=\"$service_start\"" >> Control_Service.conf
-	echo -e "s_pid=\"$service_pidfile\"" >> Control_Service.conf
-	echo -e "s_port=\"$service_port\"" >> Control_Service.conf
-        echo -e "s_stop=\"$service_stop\"" >> Control_Service.conf
-        echo -e "s_restart=\"$service_restart\"" >> Control_Service.conf
-        echo -e "s_reload=\"$service_reload\"" >> Control_Service.conf
+        echo -e "s_name=\'$service_name\'" >> Control_Service.conf
+        echo -e "s_start=\'$service_start\'" >> Control_Service.conf
+	echo -e "s_pid=\'$service_pidfile\'" >> Control_Service.conf
+	echo -e "s_port=\'$service_port\'" >> Control_Service.conf
+        echo -e "s_stop=\'$service_stop\'" >> Control_Service.conf
+        echo -e "s_restart=\'$service_restart\'" >> Control_Service.conf
+        echo -e "s_reload=\'$service_reload\'" >> Control_Service.conf
 	echo -e "}" >> Control_Service.conf
 else
-	sed -i /$service_name\(\){/,+7{"s#s_start.*#s_start=\"$service_start\"#"} Control_Service.conf
-        sed -i /$service_name\(\){/,+7{"s#s_pid.*#s_pid=\"$service_pidfile\"#"} Control_Service.conf
-	sed -i /$service_name\(\){/,+7{"s#s_port.*#s_port=\"$service_port\"#"} Control_Service.conf
-        sed -i /$service_name\(\){/,+7{"s#s_stop.*#s_stop=\"$service_stop\"#"} Control_Service.conf
-        sed -i /$service_name\(\){/,+7{"s#s_restart.*#s_restart=\"$service_restart\"#"} Control_Service.conf
-        sed -i /$service_name\(\){/,+7{"s#s_reload.*#s_reload=\"$service_reload\"#"} Control_Service.conf
+	sed -i /$service_name\(\){/,+7{"s#s_start.*#s_start=\'$service_start\'#"} Control_Service.conf
+        sed -i /$service_name\(\){/,+7{"s#s_pid.*#s_pid=\'$service_pidfile\'#"} Control_Service.conf
+	sed -i /$service_name\(\){/,+7{"s#s_port.*#s_port=\'$service_port\'#"} Control_Service.conf
+        sed -i /$service_name\(\){/,+7{"s#s_stop.*#s_stop=\'$service_stop\'#"} Control_Service.conf
+        sed -i /$service_name\(\){/,+7{"s#s_restart.*#s_restart=\'$service_restart\'#"} Control_Service.conf
+        sed -i /$service_name\(\){/,+7{"s#s_reload.*#s_reload=\'$service_reload\'#"} Control_Service.conf
 fi
 #信息登入完毕
 }
@@ -287,7 +287,7 @@ fi
 Status(){
 echo -e "\033[34;47m 服务名:$1  \033[0m"
 if [ "$s_pid" == "null" -o -z "$s_pid" ];then
-	if [ -z "$s_port" ] ;then
+	if [ "$s_port" == "null" -o -z "$s_port" ] ;then
 	        echo -e "\033[31;47m 此服务没有提供pid或者port无法检测详细状态。  \033[0m"
         	exit 1
 	else

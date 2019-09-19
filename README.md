@@ -6,7 +6,7 @@
 功能：<br>
 操作类似systemctl<br>
 ./Control_Service [选项] [参数]<br>
-./Control_Service	不填写选项进入主程序，互动模式<br>
+./Control_Service	不填写选项进入主程序，交互模式<br>
 <br>
 [选项]:<br>
 -h/--help	查看帮助<br>
